@@ -11,7 +11,6 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 async def generate_quiz(text: str, q_count: int, q_type: str):
     import re
 
-    # Smart skip: TOC/index usually pehle hoti hai
     if len(text) > 3000:
         skip = len(text) // 7
         content = text[skip:skip + 5000]
@@ -61,12 +60,11 @@ TEXT:
             },
             {"role": "user", "content": prompt}
         ],
-        temperature=0.4  # thoda low rakho = consistent structured output
+        temperature=0.4  
     )
 
     raw = response.choices[0].message.content.strip()
 
-    # Safe JSON extract
     match = re.search(r'\[.*\]', raw, re.DOTALL)
     if not match:
         raise ValueError("JSON array nahi mila AI response mein")

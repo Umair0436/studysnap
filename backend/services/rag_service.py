@@ -1,7 +1,6 @@
 import re
 from typing import List, Tuple
 
-# In-memory store: { session_id: [chunk1, chunk2, ...] }
 _doc_store: dict[str, List[str]] = {}
 
 def chunk_text(text: str, chunk_size: int = 600, overlap: int = 100) -> List[str]:
