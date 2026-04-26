@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "StudySnap",
+    "slug": "studysnap-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "softwareKeyboardLayoutMode": "resize"
+    }
+  }
+}

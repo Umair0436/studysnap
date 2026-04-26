@@ -1,9 +1,17 @@
 from groq import AsyncGroq
 from services.rag_service import retrieve_chunks, session_exists
+import os
+from dotenv import load_dotenv
+from groq import GroqError
 
-client = AsyncGroq()  # automatically GROQ_API_KEY .env se uthayega
+load_dotenv()
+_groq_api_key = os.getenv("GROQ_API_KEY")
+client = AsyncGroq(api_key=_groq_api_key) if _groq_api_key else None
 
 async def answer_question(session_id: str, question: str) -> str:
+    if not client:
+        return "Server configuration error: GROQ_API_KEY is missing."
+
     if not session_exists(session_id):
         return "Session expired or not found. Please upload the document again."
     
@@ -22,10 +30,13 @@ Document context:
 
 Question: {question}"""
 
-    response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=1024
-    )
+    try:
+        response = await client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1024
+        )
+    except GroqError as e:
+        return f"Groq API error: {str(e)}"
     
     return response.choices[0].message.content

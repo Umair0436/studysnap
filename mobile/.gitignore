@@ -1,0 +1,7 @@
+node_modules/
+*.log
+.expo/
+.expo-shared/
+web-build/
+.env*
+!.env.example

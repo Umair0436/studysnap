@@ -8,6 +8,8 @@ router = APIRouter(prefix="/chat")
 async def ask_question(body: ChatRequest):
     if not body.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
-    
-    answer = await answer_question(body.session_id, body.question)
-    return ChatResponse(answer=answer, session_id=body.session_id)
+    try:
+        answer = await answer_question(body.session_id, body.question)
+        return ChatResponse(answer=answer, session_id=body.session_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

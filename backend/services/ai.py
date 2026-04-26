@@ -2,14 +2,19 @@ from groq import Groq
 import json
 import os
 from dotenv import load_dotenv
+from groq import GroqError
 
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+_groq_api_key = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=_groq_api_key) if _groq_api_key else None
 
 
 async def generate_quiz(text: str, q_count: int, q_type: str):
     import re
+    
+    if not client:
+        raise RuntimeError("GROQ_API_KEY is missing in backend environment.")
 
     if len(text) > 3000:
         skip = len(text) // 7
@@ -46,28 +51,35 @@ Respond ONLY with a JSON array, no extra text:
 TEXT:
 {content}"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are an expert educational quiz maker. "
-                    "You only create questions that test conceptual understanding. "
-                    "You never ask about page numbers, indexes, or document structure. "
-                    "You always respond with valid JSON only, no extra text."
-                )
-            },
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.4  
-    )
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an expert educational quiz maker. "
+                        "You only create questions that test conceptual understanding. "
+                        "You never ask about page numbers, indexes, or document structure. "
+                        "You always respond with valid JSON only, no extra text."
+                    )
+                },
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.4  
+        )
+    except GroqError as e:
+        raise RuntimeError(f"Groq API error during quiz generation: {str(e)}") from e
 
     raw = response.choices[0].message.content.strip()
 
     match = re.search(r'\[.*\]', raw, re.DOTALL)
     if not match:
-        raise ValueError("JSON array nahi mila AI response mein")
+        raise RuntimeError("AI response format invalid: JSON array not found.")
 
-    quiz = json.loads(match.group())
+    try:
+        quiz = json.loads(match.group())
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"AI response JSON decode failed: {str(e)}") from e
+    
     return quiz
